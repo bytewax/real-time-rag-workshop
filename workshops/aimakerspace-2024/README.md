@@ -29,5 +29,4 @@ pip install -r requirements.txt
 
 [Slides](https://www.canva.com/design/DAGF_If8wd8/WxcocwQkzMMP_T1RIsqLMg/view?utm_content=DAGF_If8wd8&utm_campaign=designshare&utm_medium=link&utm_source=editor)
 
-[Batch version of RAG pipeline](./batch-version/)
 [Real-time version of RAG pipeline](./stream-version/)
