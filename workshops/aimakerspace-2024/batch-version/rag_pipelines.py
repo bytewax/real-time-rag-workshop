@@ -25,10 +25,9 @@ from dotenv import load_dotenv
 import os
 import json 
 
-load_dotenv("../.env")
+load_dotenv(".env")
 api_key = os.environ.get("news_api")
 open_ai_key = os.environ.get("OPENAI_API_KEY")
-unstructured = os.environ.get("UNSTRUCTURED")
 
 
 class JSONLReader():

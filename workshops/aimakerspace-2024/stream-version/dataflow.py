@@ -27,14 +27,7 @@ import os
 import json 
 
 load_dotenv(".env")
-api_key = os.environ.get("news_api")
 open_ai_key = os.environ.get("OPENAI_API_KEY")
-unstructured = os.environ.get("UNSTRUCTURED")
-
-AZURE_OPENAI_KEY = os.getenv('AZURE_OPENAI_API_KEY')
-AZURE_OPENAI_ENDPOINT = os.getenv('AZURE_OPENAI_ENDPOINT')
-AZURE_OPENAI_SERVICE = os.getenv('AZURE_OPENAI_SERVICE')
-AZURE_OPENAI_EMBEDDING_SERVICE= os.getenv('AZURE_OPENAI_EMBEDDING_SERVICE')
 
 def safe_deserialize(data):
     try:
@@ -96,9 +89,7 @@ class JSONLReader:
                         )
         
         document_splitter = DocumentSplitter(split_by="passage")        
-        document_embedder = AzureOpenAIDocumentEmbedder(azure_endpoint=AZURE_OPENAI_ENDPOINT,
-                                                        api_key=Secret.from_token(AZURE_OPENAI_KEY),
-                                                        azure_deployment=AZURE_OPENAI_EMBEDDING_SERVICE)                                                   
+        document_embedder = OpenAIDocumentEmbedder(api_key=Secret.from_token(open_ai_key))                                                   
 
         # Initialize pipeline
         self.pipeline = Pipeline()
