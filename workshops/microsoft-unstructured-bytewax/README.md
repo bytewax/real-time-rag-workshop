@@ -39,3 +39,7 @@ You can find information on real time ingestion data sources and indexing pipeli
 
 * [Kafka ingestion](./pipelines/ingestion-pipelines/README.md)
 * [Real time indexing with Unstructured and Azure](./pipelines/indexing-pipelines/README.md)
+
+## Slides
+
+You can find the slides for the workshop [here](https://www.canva.com/design/DAGGq6FuVQo/qNWKz0Z3Lo09oW4kW7Vrnw/watch?utm_content=DAGGq6FuVQo&utm_campaign=designshare&utm_medium=link&utm_source=editor)
