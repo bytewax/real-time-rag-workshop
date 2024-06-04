@@ -1,5 +1,5 @@
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/Y_Rx7cnarGWE/0.jpg)](https://www.youtube.com/watch?v=_Rx7cnarGWE)
+[![Real time RAG with Bytewax and Haystack](https://img.youtube.com/vi/_Rx7cnarGWE/0.jpg)](https://www.youtube.com/watch?v=_Rx7cnarGWE)
 
 # About the Workshop
 
