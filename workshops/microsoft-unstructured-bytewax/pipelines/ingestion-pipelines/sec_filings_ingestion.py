@@ -106,6 +106,8 @@ deduped_stream = op.stateful_map("dedupe", processed_stream, dedupe)
 # op.inspect("dedupe_stream", deduped_stream)
 
 deduped_filtered_stream = op.filter_map("remove key", deduped_stream, lambda x: x[1])
+op.inspect("filt", deduped_filtered_stream)
+
 
 cik_to_ticker = read_json("company_tickers.json", orient='index')
 cik_to_ticker.set_index(cik_to_ticker['cik_str'], inplace=True)
@@ -117,16 +119,54 @@ def enrich(data, cik_to_tickers):
         if not isinstance(ticker, str):
             ticker.iloc[0]
     except KeyError:
-        logger.warn("no valid ticker, skipping")
+        logger.warn("no valid ticker, checking form")
+        if str(data["form_type"]) in ["5", "3", "4"]:
+
+            # Split the URL into parts
+            parts = data['link'].split('/')
+
+            # Extract the relevant parts
+            cik = parts[6]
+            accession_number = parts[7]
+            formatted_accession_number = parts[-1].replace('-index.htm', '.txt')
+
+            # Construct the new URL
+            new_url = f"https://www.sec.gov/Archives/edgar/data/{cik}/{accession_number}/{formatted_accession_number}"
+
+            # User agent header to mimic a browser (SEC requires this to allow access)
+            headers = {
+                'User-Agent': 'Bytewax, Inc. contact@bytewax.io',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Cache-Control':'no-cache',
+                'Host': 'www.sec.gov'
+            }
+
+            response = requests.get(new_url, headers=headers)
+        
+            if response.status_code == 200:
+                logger.info("Successfully retrieved filing text")
+                pattern = re.compile(r'<issuerTradingSymbol>(.*?)</issuerTradingSymbol>', re.DOTALL)
+                ticker = pattern.findall(response.text)
+                if ticker == []:
+                    logger.info(f"Failed to retrieve ticker from {response.text}")
+                    return None
+                return (ticker[0], data)
+            else:
+                logger.info(f"Failed to retrieve filings. Status code: {response.status_code}")
+                return None
+        
+        logger.warn("no valid ticker and wrong type")
         # return {"ticker": None, **data}
-        return (None, data)
+        return ("no_ticker", data)
     # return {"ticker": ticker, **data}
     return (ticker, data)
 
-enrich_stream = op.map("enrich", deduped_filtered_stream, lambda x: enrich(x, cik_to_ticker))
+enrich_stream = op.filter_map("enrich", deduped_filtered_stream, lambda x: enrich(x, cik_to_ticker))
 
 
-def k_serialize(news)-> KafkaSinkMessage[Dict, Dict]:
+def serialize_k(news)-> KafkaSinkMessage[Dict, Dict]:
     return KafkaSinkMessage(
         key=json.dumps(news['symbols'][0]),
         value=json.dumps(news),
@@ -139,7 +179,7 @@ def serialize(news):
         return ('All', json.dumps(''))
 
 serialized = op.map("serialize", enrich_stream, serialize)
-op.output("output", serialized, FileSink('sec_out.jsonl'))
+op.output("output", serialized, FileSink('sec_out2.jsonl'))
 
 ## uncomment to write to kafka
 # serialized = op.map("serialize", enrich_stream, serialize_k)

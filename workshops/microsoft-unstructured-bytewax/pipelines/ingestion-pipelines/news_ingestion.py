@@ -75,7 +75,7 @@ def serialize(news):
     return (news['symbols'][0], json.dumps(news))
 
 serialized = op.map("serialize", inp, serialize)
-op.output("output", serialized, FileSink('news_out.jsonl'))
+op.output("output", serialized, FileSink('news_out_2.jsonl'))
 
 # print(f"Connecting to brokers at: {BROKERS}, Topic: {OUT_TOPIC}")
 
