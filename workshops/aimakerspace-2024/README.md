@@ -1,9 +1,13 @@
 
-[![Real time RAG with Bytewax and Haystack](https://img.youtube.com/vi/_Rx7cnarGWE/0.jpg)](https://www.youtube.com/watch?v=_Rx7cnarGWE)
 
 # About the Workshop
 
 Join in to gain the tools necessary to build efficient, real-time RAG pipelines. This event will cover the fundamentals of Retrieval Augmented Generation, data flow mechanics, and directed graphs (DGs), and will include code and material focused on implementing these concepts for real-time data processing and retrieval. Participants will gain a solid understanding of how RAG works as a powerful tool for AI applications, learn the intricacies of DG in processing architectures, and acquire practical skills in building real-time AI pipelines using Haystack and Bytewax. 
+
+## Play video on YouTube
+
+[![Real time RAG with Bytewax and Haystack](https://img.youtube.com/vi/_Rx7cnarGWE/0.jpg)](https://www.youtube.com/watch?v=_Rx7cnarGWE)
+
 
 ​Who Should Attend:
 
