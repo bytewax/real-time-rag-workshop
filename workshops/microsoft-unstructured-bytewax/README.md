@@ -37,5 +37,5 @@ Read more in our [blog](https://bytewax.io/blog/building-real-time-rag-financial
 
 You can find information on real time ingestion data sources and indexing pipelines in the respective directories.
 
-[Kafka ingestion](./pipelines/ingestion-pipelines/README.md)
-[Real time indexing with Unstructured and Azure](./pipelines/indexing-pipelines/README.md)
+* [Kafka ingestion](./pipelines/ingestion-pipelines/README.md)
+* [Real time indexing with Unstructured and Azure](./pipelines/indexing-pipelines/README.md)
