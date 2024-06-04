@@ -19,9 +19,9 @@ def _get_path_dev(path: Path) -> str:
     return hex(path.stat().st_dev)
 
 class _SimulationSourcePartition(_FileSourcePartition):
-    def __init__(self, path: Path, batch_size: int, resume_state: Optional[int], delay: int):
+    def __init__(self, path: Path, batch_size: int, resume_state: Optional[int], delay: timedelta):
         super().__init__(path, batch_size, resume_state)
-        self._delay = timedelta(delay)
+        self._delay = delay
         self._next_awake = datetime.now(timezone.utc)
 
     @override
@@ -85,6 +85,7 @@ class _AzureSearchPartition(StatelessSinkPartition[Any]):
             'api-key': search_api_key  
         }  
 
+        dictionary = dictionary[0]
         # Use the flattened meta directly
         flattened_meta = dictionary['meta']
         
