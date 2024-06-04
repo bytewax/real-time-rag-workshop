@@ -8,17 +8,20 @@ import os
 import requests
 from typing_extensions import override
 from bytewax.connectors.files import FileSource, _FileSourcePartition
-from bytewax.input import StatelessSinkPartition, DynamicSink
-
+from bytewax.outputs import StatelessSinkPartition, DynamicSink
+from dotenv import load_dotenv
+load_dotenv(".env")
 search_api_key = os.getenv("AZURE_SEARCH_ADMIN_KEY")
+
+from bytewax import inputs
 
 def _get_path_dev(path: Path) -> str:
     return hex(path.stat().st_dev)
 
 class _SimulationSourcePartition(_FileSourcePartition):
-    def __init__(self, path: Path, batch_size: int, resume_state: Optional[int], delay: timedelta):
+    def __init__(self, path: Path, batch_size: int, resume_state: Optional[int], delay: int):
         super().__init__(path, batch_size, resume_state)
-        self._delay = delay
+        self._delay = timedelta(delay)
         self._next_awake = datetime.now(timezone.utc)
 
     @override
@@ -73,7 +76,7 @@ class SimulationSource(FileSource):
 
 class _AzureSearchPartition(StatelessSinkPartition[Any]):
     @override
-    def write_batch(self, dictionary: Dict[Any]) -> None:
+    def write_batch(self, dictionary) -> None:
         index_name = "bytewax-index"
         search_api_version = '2023-11-01'
         search_endpoint = f'https://bytewax-workshop.search.windows.net/indexes/{index_name}/docs/index?api-version={search_api_version}'  
