@@ -173,10 +173,10 @@ class JSONLReader:
         dictionary = self.document_to_dict(document)
 
         # # write to Azure Search
-        result = self.write_to_ai_search(dictionary)
+        # result = self.write_to_ai_search(dictionary)
 
-        results = {"document": dictionary, "result": result}
-        return results
+        # results = {"document": dictionary, "result": result}
+        return dictionary
     
     def document_to_dict(self, document: Document) -> Dict:
         """
@@ -196,34 +196,34 @@ class JSONLReader:
             "vector": embedding
         }
 
-    def write_to_ai_search(self, dictionary):
-        index_name = "bytewax-index"
-        search_api_version = '2023-11-01'
-        search_endpoint = f'https://bytewax-workshop.search.windows.net/indexes/{index_name}/docs/index?api-version={search_api_version}'  
-        headers = {  
-            'Content-Type': 'application/json',  
-            'api-key': search_api_key  
-        }  
+    # def write_to_ai_search(self, dictionary):
+    #     index_name = "bytewax-index"
+    #     search_api_version = '2023-11-01'
+    #     search_endpoint = f'https://bytewax-workshop.search.windows.net/indexes/{index_name}/docs/index?api-version={search_api_version}'  
+    #     headers = {  
+    #         'Content-Type': 'application/json',  
+    #         'api-key': search_api_key  
+    #     }  
 
-        # Use the flattened meta directly
-        flattened_meta = dictionary['meta']
+    #     # Use the flattened meta directly
+    #     flattened_meta = dictionary['meta']
         
-        # Convert DataFrame to the format expected by Azure Search  
-        body = json.dumps({  
-            "value": [  
-                {  
-                    "@search.action": "upload",  
-                    "id": dictionary['id'],  
-                    "content": dictionary['content'],  
-                    "meta": flattened_meta,  # Use flattened meta
-                    "vector": dictionary['vector']  # Include the generated embeddings  
-                } 
-            ]  
-        })  
+    #     # Convert DataFrame to the format expected by Azure Search  
+    #     body = json.dumps({  
+    #         "value": [  
+    #             {  
+    #                 "@search.action": "upload",  
+    #                 "id": dictionary['id'],  
+    #                 "content": dictionary['content'],  
+    #                 "meta": flattened_meta,  # Use flattened meta
+    #                 "vector": dictionary['vector']  # Include the generated embeddings  
+    #             } 
+    #         ]  
+    #     })  
         
-        # Upload documents to Azure Search  
-        response = requests.post(search_endpoint, 
-                                 headers=headers, data=body) 
+    #     # Upload documents to Azure Search  
+    #     response = requests.post(search_endpoint, 
+    #                              headers=headers, data=body) 
 
-        return {"status": "success" if response.status_code == 200 else response.text}
+    #     return {"status": "success" if response.status_code == 200 else response.text}
        

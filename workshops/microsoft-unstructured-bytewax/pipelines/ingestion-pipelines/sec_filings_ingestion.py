@@ -17,7 +17,7 @@ from bytewax.connectors.kafka import KafkaSinkMessage
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-class HNSource(SimplePollingSource):
+class SECSource(SimplePollingSource):
     def next_item(self):
         # Base URL for SEC Edgar
         base_url = "https://www.sec.gov/cgi-bin/browse-edgar"
@@ -56,7 +56,7 @@ class HNSource(SimplePollingSource):
 
 
 flow = Dataflow("edgar_scraper")
-filings_stream = op.input("in", flow, HNSource(timedelta(seconds=10)))
+filings_stream = op.input("in", flow, SECSource(timedelta(seconds=10)))
 
 
 def parse_atom(xml_data):
