@@ -4,7 +4,7 @@ There are two data ingestion pipelines. One ingests data from Alpaca news websoc
 
 There are two ways to run these pipelines. In production the recommended way is to use Kafka/Redpanda, but for local testing and the purposes of the workshop, we use a local json lines file to remove the dependency on Kafka.
 
-## Preqruisites
+## Pre requisites
 
 Install Python and requirements
 
