@@ -18,6 +18,7 @@ from haystack.components.fetchers import LinkContentFetcher
 from haystack.components.converters import HTMLToDocument
 from haystack.document_stores.in_memory import InMemoryDocumentStore 
 
+import requests
 from unstructured_component import UnstructuredParser
 import logging
 
@@ -41,9 +42,24 @@ AZURE_OPENAI_ENDPOINT = os.getenv('AZURE_OPENAI_ENDPOINT')
 AZURE_OPENAI_SERVICE = os.getenv('AZURE_OPENAI_SERVICE')
 AZURE_OPENAI_EMBEDDING_SERVICE= os.getenv('AZURE_OPENAI_EMBEDDING_SERVICE')
 
+search_api_key = os.getenv("AZURE_SEARCH_ADMIN_KEY")
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def flatten_meta(meta):
+    def _flatten(d, parent_key=''):
+        items = []
+        for k, v in d.items():
+            new_key = f"{parent_key}_{k}" if parent_key else k
+            if isinstance(v, dict):
+                items.extend(_flatten(v, new_key).items())
+            else:
+                items.append((new_key, str(v) if not isinstance(v, (str, int, float, bool)) else v))
+        return dict(items)
+    
+    return _flatten(meta)
 
 
 def safe_deserialize(data):
@@ -156,9 +172,15 @@ class JSONLReader:
         metadata.update(embedding_metadata) 
         document = Document(id=document_obj.id, content=content, meta=metadata, embedding=embedding)
 
-        return document
+        dictionary = self.document_to_dict(document)
+
+        # # write to Azure Search
+        result = self.write_to_ai_search(dictionary)
+
+        results = {"document": dictionary, "result": result}
+        return results
     
-    def document_to_dict(self, document: Document, ) -> Dict:
+    def document_to_dict(self, document: Document) -> Dict:
         """
         Convert a Haystack Document object to a dictionary.
         """
@@ -166,29 +188,62 @@ class JSONLReader:
         embedding = document.embedding
         if embedding is not None and hasattr(embedding, 'tolist'):
             embedding = embedding.tolist()
-       
+        
+        flattened_meta = flatten_meta(document.meta)
+        
         return {
-                "id": document.id,
-                "content": document.content,
-                "meta": document.meta,
-                "vector": embedding
-            }
-       
+            "id": document.id,
+            "content": document.content,
+            "meta": json.dumps(flattened_meta),  # Serialize the flattened meta to a JSON string
+            "vector": embedding
+        }
+
+    def write_to_ai_search(self, dictionary):
+        index_name = "bytewax-index"
+        search_api_version = '2023-11-01'
+        search_endpoint = f'https://bytewax-workshop.search.windows.net/indexes/{index_name}/docs/index?api-version={search_api_version}'  
+        headers = {  
+            'Content-Type': 'application/json',  
+            'api-key': search_api_key  
+        }  
+
+        # Use the flattened meta directly
+        flattened_meta = dictionary['meta']
+        
+        # Convert DataFrame to the format expected by Azure Search  
+        body = json.dumps({  
+            "value": [  
+                {  
+                    "@search.action": "upload",  
+                    "id": dictionary['id'],  
+                    "content": dictionary['content'],  
+                    "meta": flattened_meta,  # Use flattened meta
+                    "vector": dictionary['vector']  # Include the generated embeddings  
+                } 
+            ]  
+        })  
+        
+        # Upload documents to Azure Search  
+        response = requests.post(search_endpoint, 
+                                 headers=headers, data=body) 
+
+        return {"status": "success" if response.status_code == 200 else response.text}
 
 
 jsonl_reader = JSONLReader(metadata_fields=['title', 'form_type', 'url'])
 
+
 def process_event(event):
     """Wrapper to handle the processing of each event."""
     if event:
-        document = jsonl_reader.run(event)
-        return jsonl_reader.document_to_dict(document)
+        dict_document = jsonl_reader.run(event)
+        return dict_document
     return None
 
 
+
 flow = Dataflow("rag-pipeline")
-input_data = op.input("input", flow, FileSource("data/sec_out1.jsonl"))
+input_data = op.input("input", flow, FileSource("data/test.jsonl"))
 deserialize_data = op.map("deserialize", input_data, safe_deserialize)
 extract_html = op.map("extract_html", deserialize_data, process_event)
-populate_vector = op.map("populate_vector", extract_html, PopulateAzureAISearch())
 op.output("output", extract_html, StdOutSink())

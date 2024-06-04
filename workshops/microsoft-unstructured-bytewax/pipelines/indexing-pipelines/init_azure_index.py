@@ -56,7 +56,6 @@ fields = [
     SearchField(name="vector", type=SearchFieldDataType.Collection(SearchFieldDataType.Single), searchable=True,filterable=False,retrievable=True,sortable=False,vector_search_dimensions=1536, vector_search_profile="myHnswProfile")
 ] 
 
-
 # Configure the vector search configuration  
 vector_search = VectorSearch(  
     algorithms=[  
