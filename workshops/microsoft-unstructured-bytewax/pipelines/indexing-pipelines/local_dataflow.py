@@ -3,11 +3,7 @@ from bytewax.dataflow import Dataflow
 from bytewax import operators as op
 from bytewax.connectors.stdio import StdOutSink
 from bytewax.connectors.files import FileSource
-from bytewax.testing import run_main
-
 from rag_custom_pipeline import safe_deserialize, JSONLReader
-from dotenv import load_dotenv
-import os
 
 
 
@@ -25,9 +21,9 @@ def process_event(event):
     return None
 
 
-
 flow = Dataflow("rag-pipeline")
 input_data = op.input("input", flow, FileSource("data/test.jsonl"))
 deserialize_data = op.map("deserialize", input_data, safe_deserialize)
 extract_html = op.map("build_indeces", deserialize_data, process_event)
 op.output("output", extract_html, StdOutSink())
+
