@@ -2,7 +2,7 @@ from bytewax import operators as op
 from bytewax.dataflow import Dataflow
 from bytewax import operators as op
 from bytewax.connectors.stdio import StdOutSink
-from bytewax.connectors.files import FileSource
+from custom_connectors import SimulationSource, AzureSearchSink
 from rag_custom_pipeline import safe_deserialize, JSONLReader
 
 
@@ -22,8 +22,8 @@ def process_event(event):
 
 
 flow = Dataflow("rag-pipeline")
-input_data = op.input("input", flow, FileSource("data/test.jsonl"))
+input_data = op.input("input", flow, SimulationSource("data/test.jsonl", batch_size=1, delay=2))
 deserialize_data = op.map("deserialize", input_data, safe_deserialize)
-extract_html = op.map("build_indeces", deserialize_data, process_event)
-op.output("output", extract_html, StdOutSink())
+extract_html = op.filter_map("build_indeces", deserialize_data, process_event)
+op.output("output", extract_html, AzureSearchSink())
 
