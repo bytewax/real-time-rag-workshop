@@ -3,7 +3,6 @@ from haystack.components.embedders import AzureOpenAIDocumentEmbedder
 from haystack.components.preprocessors import DocumentCleaner
 from pathlib import Path
 from haystack.utils import Secret
-from haystack_integrations.components.converters.unstructured import UnstructuredFileConverter
 
 
 from unstructured_component import UnstructuredParser
