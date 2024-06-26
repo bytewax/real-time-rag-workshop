@@ -141,6 +141,8 @@ class BenzingaEmbeder:
     def run(self, event: List[Union[str, Path, ByteStream]]):
         
         documents = self.pipeline.run({"get_news": {"sources": [event]}})
+        
+        self.pipeline.draw("benzinga_pipeline.png")
         return documents
     
     
