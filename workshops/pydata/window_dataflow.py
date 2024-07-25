@@ -75,7 +75,8 @@ map_tuple = op.map(
     transform_data_time,
     lambda reading_data: (str(reading_data["id"]), {"created_at":reading_data['created_at'],
                                                     "updated_at":reading_data['updated_at'],
-                                                    "headline": reading_data['headline']} # ,"content": reading_data['content']
+                                                    "headline": reading_data['headline'],
+                                                     "content": reading_data['content']}
                                                     ),
 )
 
