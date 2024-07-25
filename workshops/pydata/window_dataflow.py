@@ -109,6 +109,6 @@ def find_duplicate_ids_in_window(window):
     else:
         return None
 
-calc = op.filter_map("calc_ctr", window.down, find_duplicate_ids_in_window)
+calc = op.filter_map("find_updates", window.down, find_duplicate_ids_in_window)
 
 op.output("output", calc, StdOutSink())
