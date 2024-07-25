@@ -128,13 +128,13 @@ class BenzingaEmbeder:
         self.pipeline.add_component("get_news", get_news)
         self.pipeline.add_component("document_cleaner", document_cleaner)
         self.pipeline.add_component("document_splitter", document_splitter)
-        self.pipeline.add_component("embedding", embedding)
+        #self.pipeline.add_component("embedding", embedding)
         self.pipeline.add_component("document_writer", document_writer)
 
         self.pipeline.connect("get_news", "document_cleaner")
         self.pipeline.connect("document_cleaner", "document_splitter")
-        self.pipeline.connect("document_splitter", "embedding")
-        self.pipeline.connect("embedding", "document_writer")
+        self.pipeline.connect("document_splitter", "document_writer")
+        #self.pipeline.connect("embedding", "document_writer")
         
         
     @component.output_types(documents=List[Document])
@@ -160,7 +160,6 @@ flow = Dataflow("rag-pipeline")
 input_data = op.input("input", flow, FileSource("data/news_out.jsonl"))
 deserialize_data = op.map("deserialize", input_data, safe_deserialize)
 get_content = op.map("embed_content", deserialize_data, process_event)
-
 op.output("output", get_content, StdOutSink())
 
 
