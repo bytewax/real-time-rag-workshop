@@ -1,6 +1,8 @@
-from bytewax.operators.windowing import EventClock, TumblingWindower
-
 import time
+from datetime import datetime, timedelta, timezone
+import json
+import logging
+import re
 
 import bytewax.operators as op
 import pandas as pd
@@ -9,14 +11,6 @@ from bytewax.connectors.stdio import StdOutSink
 from bytewax.dataflow import Dataflow
 from bytewax.operators import windowing as wop
 from bytewax.operators.windowing import EventClock, TumblingWindower
-from bytewax.operators.windowing import SystemClock, SessionWindower
-
-from datetime import datetime, timedelta, timezone
-import json
-
-import logging
-import re
-
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
