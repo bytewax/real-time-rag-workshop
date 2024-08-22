@@ -13,7 +13,6 @@ from haystack.components.writers import DocumentWriter
 from pathlib import Path
 from haystack.document_stores.types import DuplicatePolicy
 from haystack.utils import Secret
-from haystack_integrations.components.converters.unstructured import UnstructuredFileConverter
 from haystack.components.fetchers import LinkContentFetcher
 from haystack.components.converters import HTMLToDocument
 from haystack.document_stores.in_memory import InMemoryDocumentStore 
@@ -171,7 +170,7 @@ class JSONLReader:
 jsonl_reader = JSONLReader(metadata_fields=['symbols', 'headline', 'url'],
                            
                            open_ai_key=open_ai_key,
-                           embedding_flag=False)
+                           embedding_flag=True)
 
 def process_event(event):
     """Wrapper to handle the processing of each event."""

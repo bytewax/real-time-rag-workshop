@@ -25,5 +25,5 @@ flow = Dataflow("rag-pipeline")
 input_data = op.input("input", flow, SimulationSource("data/test.jsonl", batch_size=1))
 deserialize_data = op.map("deserialize", input_data, safe_deserialize)
 extract_html = op.filter_map("build_indeces", deserialize_data, process_event)
-op.output("output", extract_html, AzureSearchSink())
+op.output("output", extract_html, StdOutSink())
 
