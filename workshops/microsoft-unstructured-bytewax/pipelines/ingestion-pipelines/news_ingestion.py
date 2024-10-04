@@ -19,10 +19,13 @@ ticker_list = ["*"]
 BROKERS = os.getenv("BROKER")
 OUT_TOPIC = os.getenv("TOPIC_NEWS")
 
+
 async def news_aggregator(ticker):
     url = "wss://stream.data.alpaca.markets/v1beta1/news"
     async with websockets.connect(url) as websocket:
-        await websocket.send(json.dumps({"action": "auth", "key": API_KEY, "secret": API_SECRET}))
+        await websocket.send(
+            json.dumps({"action": "auth", "key": API_KEY, "secret": API_SECRET})
+        )
         await websocket.recv()  # Ignore auth response
         await websocket.send(json.dumps({"action": "subscribe", "news": [ticker]}))
         await websocket.recv()  # Ignore subscription response
@@ -32,6 +35,7 @@ async def news_aggregator(ticker):
             message = await websocket.recv()
             articles = json.loads(message)
             yield articles
+
 
 class NewsPartition(StatefulSourcePartition):
     def __init__(self, ticker):
@@ -47,6 +51,7 @@ class NewsPartition(StatefulSourcePartition):
     def close(self):
         pass  # The async context manager will handle closing the WebSocket.
 
+
 @dataclass
 class NewsSource(FixedPartitionedSource):
     tickers: List[str] = field(default_factory=lambda: ["*"])
@@ -57,25 +62,32 @@ class NewsSource(FixedPartitionedSource):
     def build_part(self, step_id, for_key, _resume_state):
         return NewsPartition(for_key)
 
+
 def process_article(state, article):
     source, news = article
-    return (source, news['headline'])  # Simplified processing
+    return (source, news["headline"])  # Simplified processing
+
 
 flow = Dataflow("news_loader")
-inp = op.input("news_input", flow, NewsSource(ticker_list)).then(op.flat_map, "flatten", lambda x: x)
+inp = op.input("news_input", flow, NewsSource(ticker_list)).then(
+    op.flat_map, "flatten", lambda x: x
+)
 op.inspect("input", inp)
 
-def serialize_k(news)-> KafkaSinkMessage[Dict, Dict]:
+
+def serialize_k(news) -> KafkaSinkMessage[Dict, Dict]:
     return KafkaSinkMessage(
-        key=json.dumps(news['symbols'][0]),
+        key=json.dumps(news["symbols"][0]),
         value=json.dumps(news),
     )
 
+
 def serialize(news):
-    return (news['symbols'][0], json.dumps(news))
+    return (news["symbols"][0], json.dumps(news))
+
 
 serialized = op.map("serialize", inp, serialize)
-op.output("output", serialized, FileSink('news_out_2.jsonl'))
+op.output("output", serialized, FileSink("news_out_2.jsonl"))
 
 # print(f"Connecting to brokers at: {BROKERS}, Topic: {OUT_TOPIC}")
 

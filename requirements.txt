@@ -1,11 +1,9 @@
 azure-ai-documentintelligence
-unstructured-client 
-"unstructured[all-docs]"
-"azure-ai-formrecognizer>=3.2.0b2"
-azure_search_documents-11.4.0b12-py3-none-any.whl
+azure-ai-formrecognizer>=3.2.0b2
+azure-search-documents
 markdownify
-haystack-ai
-unstructured-fileconverter-haystack
-bytewax==0.19
+bytewax[kafka]==0.21.0
 pandas==2.2.2
 requests==2.31.0
+openai==1.51.0
+python-dotenv==1.0.1
