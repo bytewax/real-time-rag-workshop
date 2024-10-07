@@ -1,4 +1,3 @@
-
 from haystack import Pipeline
 from haystack.components.embedders import OpenAIDocumentEmbedder
 from haystack.components.preprocessors import DocumentCleaner
@@ -7,10 +6,12 @@ from haystack.components.writers import DocumentWriter
 from pathlib import Path
 from haystack.document_stores.types import DuplicatePolicy
 from haystack.utils import Secret
-from haystack_integrations.components.converters.unstructured import UnstructuredFileConverter
+from haystack_integrations.components.converters.unstructured import (
+    UnstructuredFileConverter,
+)
 from haystack.components.fetchers import LinkContentFetcher
 from haystack.components.converters import HTMLToDocument
-from haystack.document_stores.in_memory import InMemoryDocumentStore 
+from haystack.document_stores.in_memory import InMemoryDocumentStore
 
 from haystack.components.embedders import OpenAITextEmbedder
 from haystack.utils import Secret
@@ -23,36 +24,36 @@ from typing import Any, Dict, List, Optional, Union
 from haystack.dataclasses import ByteStream
 from dotenv import load_dotenv
 import os
-import json 
+import json
 
 load_dotenv(".env")
 api_key = os.environ.get("news_api")
 open_ai_key = os.environ.get("OPENAI_API_KEY")
 
 
-class JSONLReader():
-    def __init__(self, metadata_fields=None, link_keyword='url'):
+class JSONLReader:
+    def __init__(self, metadata_fields=None, link_keyword="url"):
         """
         Initialize the JSONLReader with optional metadata fields and a link keyword.
-        
+
         :param metadata_fields: List of fields in the JSONL to retain as metadata.
         :param link_keyword: The keyword to use to extract the URL from the JSONL.
         """
         self.metadata_fields = metadata_fields or []
         self.link_keyword = link_keyword
-        
+
         # Set up cleaning mechanism
         regex_pattern = r"(?i)\bloading\s*\.*\s*|(\s*--\s*-\s*)+"
 
         fetcher = LinkContentFetcher(retry_attempts=3, timeout=10)
         converter = HTMLToDocument()
         document_cleaner = DocumentCleaner(
-                            remove_empty_lines=True,
-                            remove_extra_whitespaces=True,
-                            remove_repeated_substrings=False,
-                            remove_substrings=None,  
-                            remove_regex=regex_pattern
-                        )
+            remove_empty_lines=True,
+            remove_extra_whitespaces=True,
+            remove_repeated_substrings=False,
+            remove_substrings=None,
+            remove_regex=regex_pattern,
+        )
 
         # Initialize pipeline
         self.pipeline = Pipeline()
@@ -77,27 +78,35 @@ class JSONLReader():
         documents = []
         for source in sources:
             file_content = self._extract_content(source)
-            for line in file_content.strip().split('\n'):
+            for line in file_content.strip().split("\n"):
                 if line.strip():
                     data = json.loads(line)
-                    
+
                     # Handle both direct dictionaries and lists with [null, {dict}] format
-                    if isinstance(data, list) and len(data) == 2 and isinstance(data[1], dict):
+                    if (
+                        isinstance(data, list)
+                        and len(data) == 2
+                        and isinstance(data[1], dict)
+                    ):
                         data = data[1]  # Use the dictionary from the list
                     elif not isinstance(data, dict):
                         print(f"Unexpected format or missing data in line: {data}")
                         continue  # Skip lines that do not match expected format
-                    
+
                     # Extract URL and modify it if necessary
                     url = data.get(self.link_keyword)
-                    if url and '-index.html' in url:
-                        url = url.replace('-index.html', '.txt')
+                    if url and "-index.html" in url:
+                        url = url.replace("-index.html", ".txt")
 
                     else:
-                        metadata = {field: data.get(field) for field in self.metadata_fields if field in data}
+                        metadata = {
+                            field: data.get(field)
+                            for field in self.metadata_fields
+                            if field in data
+                        }
                         # Assume a pipeline fetches and processes this URL
                         doc = self.pipeline.run({"fetcher": {"urls": [url]}})
-                        document = doc['cleaner']['documents'][0].content
+                        document = doc["cleaner"]["documents"][0].content
 
                         # Create a document with fetched content and extracted metadata
                         documents.append(Document(content=document, meta=metadata))
@@ -111,47 +120,47 @@ class JSONLReader():
         :return: The extracted content as a string.
         """
         if isinstance(source, (str, Path)):
-            with open(source, 'r', encoding='utf-8') as file:
+            with open(source, "r", encoding="utf-8") as file:
                 return file.read()
         elif isinstance(source, ByteStream):
-            return source.data.decode('utf-8')
+            return source.data.decode("utf-8")
         else:
             raise ValueError(f"Unsupported source type: {type(source)}")
 
-def build_indexing_pipeline(document_store):
 
+def build_indexing_pipeline(document_store):
     document_splitter = DocumentSplitter(split_by="passage")
-                                                                    
+
     document_embedder = OpenAIDocumentEmbedder(api_key=Secret.from_token(open_ai_key))
 
     document_writer = DocumentWriter(document_store=document_store)
 
-    indexing_pipeline = Pipeline() 
-    indexing_pipeline.add_component("splitter", document_splitter)   
-    indexing_pipeline.add_component("embedder",document_embedder )
+    indexing_pipeline = Pipeline()
+    indexing_pipeline.add_component("splitter", document_splitter)
+    indexing_pipeline.add_component("embedder", document_embedder)
     indexing_pipeline.add_component("writer", document_writer)
 
-    indexing_pipeline.connect('splitter','embedder')
+    indexing_pipeline.connect("splitter", "embedder")
     indexing_pipeline.connect("embedder", "writer")
 
     return indexing_pipeline
 
 
-
 def build_retriever_pipeline(document_store, open_ai_key):
     """
     Create a pipeline for retrieving documents from the document store.
-    
+
     :param document_store: DocumentStore to read the documents from.
     :param open_ai_key: OpenAI API key.
-    
+
     :return: Pipeline for retrieving documents.
     """
 
-    text_embedder = OpenAITextEmbedder(api_key = Secret.from_token(open_ai_key))
+    text_embedder = OpenAITextEmbedder(api_key=Secret.from_token(open_ai_key))
     retriever = InMemoryEmbeddingRetriever(document_store)
-    generator = OpenAIGenerator(api_key = Secret.from_token(open_ai_key), 
-        model="gpt-3.5-turbo")
+    generator = OpenAIGenerator(
+        api_key=Secret.from_token(open_ai_key), model="gpt-3.5-turbo"
+    )
 
     template = """
     Your task is to generate a comprehensive report using the context provided, 

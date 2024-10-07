@@ -15,7 +15,7 @@ from haystack.document_stores.types import DuplicatePolicy
 from haystack.utils import Secret
 from haystack.components.fetchers import LinkContentFetcher
 from haystack.components.converters import HTMLToDocument
-from haystack.document_stores.in_memory import InMemoryDocumentStore 
+from haystack.document_stores.in_memory import InMemoryDocumentStore
 from haystack.components.embedders import AzureOpenAIDocumentEmbedder
 
 from haystack import component, Document
@@ -23,19 +23,22 @@ from typing import Any, Dict, List, Optional, Union
 from haystack.dataclasses import ByteStream
 from dotenv import load_dotenv
 import os
-import json 
+import json
 
 load_dotenv(".env")
 open_ai_key = os.environ.get("OPENAI_API_KEY")
+
 
 def safe_deserialize(data):
     try:
         # Attempt to load the JSON data
         parsed_data = json.loads(data)
-        
+
         # Check if the data is in the list format with a possible null as the first item
         if isinstance(parsed_data, list):
-            if len(parsed_data) == 2 and (parsed_data[0] is None or isinstance(parsed_data[0], str)):
+            if len(parsed_data) == 2 and (
+                parsed_data[0] is None or isinstance(parsed_data[0], str)
+            ):
                 event = parsed_data[1]  # Select the dictionary which is the second item
             else:
                 print(f"Skipping unexpected list format: {data}")
@@ -46,9 +49,9 @@ def safe_deserialize(data):
         else:
             print(f"Skipping unexpected data type: {data}")
             return None
-        
-        if 'link' in event:
-            event['url'] = event.pop('link')
+
+        if "link" in event:
+            event["url"] = event.pop("link")
         # Check for the presence of 'url' key to further validate the data
         if "url" in event:
             return event  # Return the entire event dict or adapt as needed
@@ -68,27 +71,29 @@ class JSONLReader:
     def __init__(self, metadata_fields=None, open_ai_key=None, embedding_flag=False):
         """
         Initialize the JSONLReader with optional metadata fields and a link keyword.
-        
+
         :param metadata_fields: List of fields in the JSONL to retain as metadata.
         """
         self.metadata_fields = metadata_fields or []
         self.embedding_flag = embedding_flag
-        
+
         # Set up cleaning mechanism
         regex_pattern = r"(?i)\bloading\s*\.*\s*|(\s*--\s*-\s*)+"
 
         fetcher = LinkContentFetcher(retry_attempts=3, timeout=10)
         converter = HTMLToDocument()
         document_cleaner = DocumentCleaner(
-                            remove_empty_lines=True,
-                            remove_extra_whitespaces=True,
-                            remove_repeated_substrings=False,
-                            remove_substrings=None,  
-                            remove_regex=regex_pattern
-                        )
-        
-        document_splitter = DocumentSplitter(split_by="passage")        
-        document_embedder = OpenAIDocumentEmbedder(api_key=Secret.from_token(open_ai_key))                                                   
+            remove_empty_lines=True,
+            remove_extra_whitespaces=True,
+            remove_repeated_substrings=False,
+            remove_substrings=None,
+            remove_regex=regex_pattern,
+        )
+
+        document_splitter = DocumentSplitter(split_by="passage")
+        document_embedder = OpenAIDocumentEmbedder(
+            api_key=Secret.from_token(open_ai_key)
+        )
 
         # Initialize pipeline
         self.pipeline = Pipeline()
@@ -117,60 +122,66 @@ class JSONLReader:
 
         # Extract URL and modify it if necessary
         url = event.get("url")
-        if url and '-index.html' in url:
-            url = url.replace('-index.html', '.txt')
+        if url and "-index.html" in url:
+            url = url.replace("-index.html", ".txt")
 
         # else:
-        metadata = {field: event.get(field) for field in self.metadata_fields if field in event}
+        metadata = {
+            field: event.get(field) for field in self.metadata_fields if field in event
+        }
         # Assume a pipeline fetches and processes this URL
         doc = self.pipeline.run({"fetcher": {"urls": [url]}})
         print(doc)
-        document_obj = doc['embedder']['documents'][0]
+        document_obj = doc["embedder"]["documents"][0]
         content = document_obj.content
         additional_metadata = document_obj.meta
 
         if self.embedding_flag:
             embedding = document_obj.embedding
             # Safely access the embedding metadata
-            embedding_metadata = doc.get('embedder', {}).get('meta', {})
-            metadata.update(embedding_metadata) 
-            document = Document(id=document_obj.id, content=content, meta=metadata, embedding=embedding)
+            embedding_metadata = doc.get("embedder", {}).get("meta", {})
+            metadata.update(embedding_metadata)
+            document = Document(
+                id=document_obj.id, content=content, meta=metadata, embedding=embedding
+            )
 
         metadata.update(additional_metadata)
-         # Merge embedding metadata
+        # Merge embedding metadata
         document = Document(id=document_obj.id, content=content, meta=metadata)
         return document
-    
-    def document_to_dict(self, document: Document, ) -> Dict:
+
+    def document_to_dict(
+        self,
+        document: Document,
+    ) -> Dict:
         """
         Convert a Haystack Document object to a dictionary.
         """
         # Ensure embedding is converted to a list, if it is a NumPy array
         embedding = document.embedding
-        if embedding is not None and hasattr(embedding, 'tolist'):
+        if embedding is not None and hasattr(embedding, "tolist"):
             embedding = embedding.tolist()
         if self.embedding_flag:
             return {
                 "id": document.id,
                 "content": document.content,
                 "meta": document.meta,
-                "embedding": embedding
+                "embedding": embedding,
             }
         else:
-
             return {
                 "id": document.id,
                 "content": document.content,
                 "meta": document.meta,
-             
             }
 
-    
 
-jsonl_reader = JSONLReader(metadata_fields=['symbols', 'headline', 'url'],
-                           
-                           open_ai_key=open_ai_key,
-                           embedding_flag=True)
+jsonl_reader = JSONLReader(
+    metadata_fields=["symbols", "headline", "url"],
+    open_ai_key=open_ai_key,
+    embedding_flag=True,
+)
+
 
 def process_event(event):
     """Wrapper to handle the processing of each event."""
